@@ -62,7 +62,7 @@ Dalam DSR, artefak **bukan tujuan akhir** — ia adalah instrumen untuk menghasi
 
 ```
 Nama Peneliti    : Muhammad Firly Ramadhan
-Tanggal          : ____________________
+Tanggal          : 24 April 2026
 
 1. Ketika membaca klaim "metode X 95% akurat":
    - Pertanyaan pertama saya: Bagaimana metrik "efisiensi" didefinisikan secara matematis, dan apakah angka 95% tersebut merupakan peluang kumulatif pada batas hard pity atau nilai rata-rata (mean)?
