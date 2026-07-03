@@ -160,5 +160,6 @@ Rencanakan bagaimana menangani anomali. Untuk setiap jenis, tentukan langkah yan
 
 **Pengalaman sebelumnya:**
 > Pada eksperimen simulasi atau pembuatan sistem terdahulu, pengujian sering kali hanya dilakukan satu kali (single run) asalkan program tidak error dan sudah menghasilkan satu output atau persentase keberhasilan.
+
 **Yang akan dilakukan berbeda:**
 > Simulasi probabilitas (gacha) sangat dipengaruhi oleh RNG (Random Number Generator). Mengandalkan single run sangat berisiko memunculkan bias kebetulan—bisa saja seed tertentu secara kebetulan memberikan rata-rata pull yang terlalu rendah atau terlalu tinggi. Ke depannya, saya akan selalu mengeksekusi minimal 5-10 run dengan seed yang berbeda, lalu mengambil nilai rata-rata dari seluruh komputasi tersebut untuk memastikan bahwa temuan terkait cumulative probability dapat dipertanggungjawabkan secara statistik.
