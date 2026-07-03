@@ -63,56 +63,65 @@ Ancaman validitas harus diidentifikasi **sebelum** eksperimen dan mitigasinya di
 
 ---
 
-## Template A.7 — Desain Eksperimen Lengkap
+## A.7 — Desain Eksperimen Lengkap
 
-```
-EXPERIMENT DESIGN
+## EXPERIMENT DESIGN
 
-Research Question : ____________________
-Hypothesis        : ____________________
-Tipe Eksperimen   : [ ] Comparison  [ ] Ablation  [ ] Parameter
+**Research Question** : Bagaimana algoritma Weighted Probability memengaruhi peluang memperoleh item rare pada sistem gacha game?
 
-Kondisi Eksperimen:
+**Hypothesis**        : Algoritma Weighted Probability meningkatkan cumulative probability memperoleh item rare dibandingkan fixed probability.
+
+**Tipe Eksperimen**   : 
+- [ ] Comparison
+- [x] Ablation
+- [ ] Parameter
+
+**Kondisi Eksperimen**:
 | Kondisi | Deskripsi | IV Value | CV Settings |
 |---------|-----------|----------|-------------|
-| Control |           |          |             |
-| Treatment |         |          |             |
+| Control | Sistem fixed probability | Fixed Probability | Base probability 0.6%, pity threshold 90 |
+| Treatment | Sistem weighted probability | Weighted Probability | Base probability 0.6%, pity threshold 90 |
 
-Fairness Checklist:
-  [ ] Dataset identik untuk semua kondisi
-  [ ] Preprocessing setara
-  [ ] Tuning effort setara
-  [ ] Environment identik
-  [ ] Metrik evaluasi sama
+**Fairness Checklist**:
+  - [x] Dataset identik untuk semua kondisi
+  - [x] Preprocessing setara
+  - [x] Tuning effort setara
+  - [x] Environment identik
+  - [x] Metrik evaluasi sama
 
-Threat Analysis:
+**Threat Analysis**:
 | Threat Type | Ancaman Spesifik | Mitigasi |
 |-------------|-----------------|----------|
-| Internal    |                 |          |
-| External    |                 |          |
-| Construct   |                 |          |
-| Conclusion  |                 |          |
+| Internal | Perubahan parameter selain weighted probability | Mengunci seluruh control variable |
+| External | Sistem simulasi tidak sepenuhnya merepresentasikan game asli | Menggunakan parameter umum pada game gacha modern |
+| Construct | Cumulative probability tidak menggambarkan seluruh sistem gacha | Menambahkan jumlah pull sebagai secondary metric |
+| Conclusion | Jumlah simulasi terlalu sedikit | Menggunakan banyak iterasi simulasi |
 
-Statistical Plan:
-  Uji statistik   : ____________________
-  Justifikasi      : ____________________
-  Alpha            : ____________________
-  Effect size min  : ____________________
-```
+### Statistical Plan
+  **Uji statistik**    : Perbandingan rata-rata cumulative probability
+  
+  **Justifikasi**      : Digunakan untuk melihat perbedaan probabilitas antar kondisi
+  
+  **Alpha**            : 0.05
+  
+  **Effect size min**  : 0.1
 
----
 
 ## Latihan 1 — Desain Eksperimen
 
 Susun desain eksperimen berdasarkan RQ, variabel, dan sistem dari WS-04 sampai WS-06.
 
-**RQ:** __________________________________________________
-**Tipe eksperimen:** [ ] Comparison / [ ] Ablation / [ ] Parameter
+**RQ:** Bagaimana algoritma Weighted Probability memengaruhi peluang memperoleh item rare pada sistem gacha game?
+
+**Tipe eksperimen:** 
+- [ ] Comparison
+- [x] Ablation
+- [ ] Parameter
 
 | Kondisi | Deskripsi | IV Value | CV Settings |
 |---------|-----------|----------|-------------|
-| Control | *Contoh: RF baseline dari literatur* | *RF* | *Dataset X, 80:20 split, seed 42* |
-| Treatment | | | |
+| Control | Sistem probabilitas tetap | Fixed Probability | Base probability 0.6%, pity threshold 90 |
+| Treatment | Sistem weighted probability | Weighted Probability | Base probability 0.6%, pity threshold 90 |
 
 ---
 
@@ -122,14 +131,16 @@ Evaluasi apakah desain eksperimen di Latihan 1 sudah fair.
 
 | Kriteria | Status | Detail |
 |----------|--------|--------|
-| Dataset identik | *Contoh: ✅ — sama-sama pakai CIC-MalMem-2022* | |
-| Preprocessing setara | | |
-| Tuning effort setara | | |
-| Environment identik | | |
-| Metrik evaluasi sama | | |
+| Dataset identik | ✅ | Menggunakan simulasi pull yang sama |
+| Preprocessing setara | ✅ | Tidak ada perbedaan preprocessing |
+| Tuning effort setara | ✅ | Parameter selain IV dibuat sama |
+| Environment identik | ✅ | Simulasi dijalankan pada sistem yang sama |
+| Metrik evaluasi sama | ✅ | Menggunakan cumulative probability |
 
-**Ada yang tidak fair?** [ ] Ya / [ ] Tidak
-> Jika ya, bagaimana cara memperbaikinya? ________________
+
+**Ada yang tidak fair?** 
+- [ ] Ya
+- [x] Tidak
 
 ---
 
@@ -139,14 +150,18 @@ Identifikasi ancaman validitas untuk desain eksperimen ini.
 
 | Threat Type | Ancaman Spesifik | Mitigasi |
 |-------------|-----------------|----------|
-| Internal | *Contoh: Data leakage antara train-test* | *Contoh: Gunakan stratified split, validasi tidak ada overlap* |
-| External | | |
-| Construct | | |
-| Conclusion | | |
+| Internal | Parameter lain berubah selama eksperimen | Mengunci seluruh control variable |
+| External | Simulasi berbeda dengan implementasi game asli | Menggunakan parameter dari sistem gacha modern |
+| Construct | Metrik tidak cukup merepresentasikan algoritma | Menggunakan cumulative probability dan jumlah pull |
+| Conclusion | Iterasi simulasi terlalu sedikit | Menambah jumlah simulasi |
 
-**Ancaman mana yang paling sulit dimitigasi?** _____________
+---
+
+**Ancaman mana yang paling sulit dimitigasi?** 
+> External Validity
+
 **Mengapa?**
-> ___________________________________________________
+> Karena sistem simulasi tidak dapat sepenuhnya merepresentasikan seluruh mekanisme pada game gacha asli.
 
 ---
 
@@ -155,6 +170,6 @@ Identifikasi ancaman validitas untuk desain eksperimen ini.
 > Sebuah paper melaporkan "metode kami mengalahkan semua baseline." Apa 3 pertanyaan pertama yang harus diajukan untuk mengevaluasi klaim ini?
 
 **Jawaban:**
-1. ___________________________________________________
-2. ___________________________________________________
-3. ___________________________________________________
+1. Apakah semua metode diuji pada kondisi yang sama?
+2. Apakah baseline yang digunakan relevan dan berasal dari literatur terpercaya?
+3. Apakah metrik evaluasi dan jumlah eksperimen sudah valid?
