@@ -63,49 +63,26 @@ Run gagal/anomali tidak boleh dihapus tanpa dokumentasi. Bisa jadi:
 
 ---
 
-## Template A.10 — Execution Plan & Data Log
-
-```
-EXECUTION PLAN
-
-| Run # | Skenario | Seed | Parameter | Status | Waktu | Output File |
-|-------|----------|------|-----------|--------|-------|-------------|
-| 1     | Fixed vs Weighted | 42 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha.csv |
-| 2     | Fixed vs Weighted | 123 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_2.csv |
-| 3     | Fixed vs Weighted | 999 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_3.csv |
-| 4     | Fixed vs Weighted | 2026 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_4.csv |
-| 5     | Fixed vs Weighted | 8888 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_5.csv |
-
-Jumlah runs per skenario : 5 (untuk masing-masing kondisi baseline dan intervention)
-Total runs               : 5 (dieksekusi secara bersamaan per run)
-
-DATA LOG (per run - Contoh untuk Run #1):
-  Run ID    : run-sim-001
-  Timestamp : 2026-07-03T22:57:30
-  Skenario  : Komparasi Kondisi A (Fixed Probability) dan Kondisi B (Weighted Probability)
-  Input     : TOTAL_SAMPEL=100000, BASE_PROBABILITY=0.006, SOFT_PITY=50, HARD_PITY=70, RANDOM_SEED=42
-  Output    : hasil_simulasi_gacha.csv (berisi metrik Cumulative Probability dan Average Pulls)
-  Anomali   : -
-  Catatan   : Eksekusi eksperimen komparatif berbasis simulasi menggunakan data primer dari log mesin (pull simulator) untuk 100.000 pemain virtual.
-```
-
----
-
 ## Latihan 1 — Execution Plan
 
 Susun execution plan untuk eksperimen Anda. Tentukan skenario, jumlah run, dan seed sebelum eksekusi.
 
 | Run # | Skenario | Seed | Parameter | Status | Waktu | Output File |
 |-------|----------|------|-----------|--------|-------|-------------|
-| 1 | Fixed vs Weighted | 42 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha.csv |
+| 1 | Fixed vs Weighted | 42 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_1.csv |
 | 2 | Fixed vs Weighted | 123 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_2.csv |
 | 3 | Fixed vs Weighted | 999 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_3.csv |
 | 4 | Fixed vs Weighted | 2026 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_4.csv |
 | 5 | Fixed vs Weighted | 8888 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_5.csv |
+| 6 | Fixed vs Weighted | 111 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_6.csv |
+| 7 | Fixed vs Weighted | 2222 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_7.csv |
+| 8 | Fixed vs Weighted | 3333 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_8.csv |
+| 9 | Fixed vs Weighted | 4444 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_9.csv |
+| 10 | Fixed vs Weighted | 5555 | N=100.000, BP=0.6%, SP=50, HP=70 | Planned | TBD | hasil_simulasi_gacha_10.csv |
 
 **Total skenario:** 2(kondisi A : Fixed Probability, Kondisi B : Weighted Probability
-**Run per skenario:** 5
-**Total run keseluruhan:** 5 kali eksekusi mesin simulasi
+**Run per skenario:** 10
+**Total run keseluruhan:** 10 (Mengeksekusi total 1.000.000 responden virtual per kondisi)
 
 ---
 
