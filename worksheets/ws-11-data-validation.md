@@ -64,32 +64,31 @@ Jika gagal di langkah awal → tidak perlu lanjut.
 
 ```
 DATA VALIDATION CHECKLIST
-
 Completeness:
   [ ] Semua skenario tercakup
   [ ] Jumlah run sesuai rencana
   [ ] Tidak ada file output hilang
-  Missing: 1 dari 5 data points (Run 4 gagal/anomali)
+  Missing: 1 dari 10 data points (Run 4 terdeteksi anomali/gagal)
 
 Format Consistency:
-  [x] Semua file format sama (CSV/JSON/...)
-  [x] Header konsisten
-  [x] Tipe data konsisten (numerik tetap numerik)
+  [X] Semua file format sama (CSV/JSON/...)
+  [X] Header konsisten
+  [X] Tipe data konsisten (numerik tetap numerik)
 
 Range & Logic:
   [ ] Nilai dalam range masuk akal
-  [x] Tidak ada waktu negatif
-  [x] Metrik 0–100%, tidak di luar range
-  Anomali ditemukan: Rata-rata pull untuk Kondisi Fixed pada Run 4 bernilai 95.3 (di luar batas kewajaran IQR yakni 162.8) karena tercampur parameter Weighted
+  [X] Tidak ada waktu negatif
+  [X] Metrik 0–100%, tidak di luar range
+  Anomali ditemukan: Rata-rata pull untuk Kondisi Fixed pada Run 4 bernilai sangat rendah (95.3), jauh di bawah batas kewajaran.
 
 Cross-Validation:
-  [ ] Run identik → hasil mendekati (Gagal di Run 4)
-  [ ] Trend konsisten dengan ekspektasi teori
+  [ ] Run identik → hasil mendekati (Gagal pada Run 4)
+  [X] Trend konsisten dengan ekspektasi teori
 
 Keputusan:
   [ ] Data siap analisis
-  [x] Perlu cleaning
-  [x] Perlu re-run (skenario: Run 4 - Fixed vs Weighted)
+  [X] Perlu cleaning
+  [X] Perlu re-run (skenario: Run 4 - Fixed vs Weighted)
 ```
 
 ---
@@ -104,12 +103,17 @@ Verifikasi apakah semua data yang direncanakan sudah terkumpul.
 | Eksperimen Fixed & Weighted (Run 2) | 1 | 1 | 0 | Berjalan lancar, file CSV tersimpan |
 | Eksperimen Fixed & Weighted (Run 3) | 1 | 1 | 0 | Berjalan lancar, file CSV tersimpan |
 | Eksperimen Fixed & Weighted (Run 4) | 1 | 0 | 1 | Terjadi Memory Error (OOM) pada iterasi ke-85.000 akibat penumpukan data list di RAM. |
-| Eksperimen Fixed & Weighted (Run 5) | 1 | 1 | 0 | Berjalan lancar setelah restart compiler, file CSV tersimpan. |
+| Eksperimen Fixed & Weighted (Run 5) | 1 | 1 | 0 | Berjalan lancar, file CSV tersimpan |
+| Eksperimen Fixed & Weighted (Run 6) | 1 | 1 | 0 | Berjalan lancar, file CSV tersimpan |
+| Eksperimen Fixed & Weighted (Run 7) | 1 | 1 | 0 | Berjalan lancar, file CSV tersimpan |
+| Eksperimen Fixed & Weighted (Run 8) | 1 | 1 | 0 | Berjalan lancar, file CSV tersimpan |
+| Eksperimen Fixed & Weighted (Run 9) | 1 | 1 | 0 | Berjalan lancar, file CSV tersimpan |
+| Eksperimen Fixed & Weighted (Run 10) | 1 | 1 | 0 | Berjalan lancar, file CSV tersimpan |
 
-**Total expected:** 5 Run | **Total actual:** 4 Run | **Missing:** 1 Run
+**Total expected:** 10 Run | **Total actual:** 9 Run | **Missing:** 1 Run
 
 **Keputusan untuk data missing:**
-> Mendokumentasikan kegagalan pada Run 4. Melakukan optimasi memori pada skrip Python dengan langsung menuliskan hasil per iterasi ke dalam CSV alih-alih menyimpannya di variabel memori, lalu melakukan re-run khusus untuk seed Run 4 agar data genap menjadi 5 run.
+> Mendokumentasikan kegagalan pada Run 4. Melakukan optimasi memori pada skrip Python dengan langsung menuliskan hasil per iterasi ke dalam CSV alih-alih menyimpannya di variabel memori, lalu melakukan re-run khusus untuk seed Run 4 agar data genap menjadi 10 run.
 
 ---
 
@@ -126,12 +130,17 @@ Periksa data Anda untuk anomali. Gunakan metode IQR atau z-score.
 | 3 | 166.8 |
 | 4 | 95.3 |
 | 5 | 165.2 |
+| 6 | 166.4 |
+| 7 | 166.9 |
+| 8 | 166.1 |
+| 9 | 167.2 |
+| 10 | 166.7 |
 
 **Deteksi outlier:**
-- Data diurutkan: 95.3, 165.2, 166.5, 166.8, 167.1
-- Q1 = 165.2 | Q3 = 166.8 | IQR = Q3-Q1 = 1.6
-- Batas bawah (Q1 - 1.5×IQR) = 162.8
-- Batas atas (Q3 + 1.5×IQR) = 169.2
+- Data diurutkan: 95.3, 165.2, 166.1, 166.4, 166.5, 166.7, 166.8, 166.9, 167.1, 167.2
+- Q1 = 166.1 | Q3 = 166.9 | IQR = Q3-Q1 = 0.8
+- Batas bawah (Q1 - 1.5×IQR) = 164.9
+- Batas atas (Q3 + 1.5×IQR) = 168.1
 - Outlier terdeteksi: 95.3(Run 4)
 
 **Investigasi (untuk setiap outlier):**
