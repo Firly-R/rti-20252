@@ -4,11 +4,10 @@ Kumpulan referensi & paper terkait untuk mendukung Tinjauan Pustaka (Tahap 5).
 
 ## Topik referensi yang relevan
 
-- Keamanan JWT/JWKS (termasuk kelas kerentanan JWKS Endpoint Flooding / CVE-2026-48524)
-- Strategi caching multi-layer (Redis sebagai L1, PostgreSQL sebagai L2/source of truth)
-- Negative caching untuk mitigasi flooding/cache-busting
-- Rate limiting pada API Gateway / microservices
-- Metodologi load testing dengan k6
+- Algoritma probabilitas pada loot box dan gacha system (Fixed vs Weighted Probability).
+- Pity system, soft pity, hard pity.
+- Dampak gacha terhadap perilaku konsumtif dan psikologi (gambling effect).
+- Regulasi transparansi probabilitas dan monetisasi game.
 
 ## Isi yang diharapkan
 
@@ -17,5 +16,5 @@ Kumpulan referensi & paper terkait untuk mendukung Tinjauan Pustaka (Tahap 5).
 
 ## Berkas
 
-- [matriks-literatur.md](matriks-literatur.md) — matriks literatur lengkap (7 topik dipetakan ke 18 referensi terverifikasi; status verifikasi CVE-2026-48524)
-- [daftar-pustaka.bib](daftar-pustaka.bib) — bibliografi BibTeX (18 entri), siap diimpor ke Mendeley
+- [matriks-literatur.md](matriks-literatur.md) — matriks literatur (memetakan 10 referensi berdasarkan topik dan temuan).
+- [daftar-pustaka.bib](daftar-pustaka.bib) — bibliografi BibTeX (10 entri), siap diimpor ke aplikasi manajemen referensi.
