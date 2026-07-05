@@ -1,25 +1,27 @@
 # Laporan Penelitian
 
-**Judul:** Performance and Security Evaluation of Mitigating JWKS Endpoint Flooding on Microservices Gateway Using Redis-PostgreSQL Hybrid Caching
+**Judul:** Analisis Pengaruh Algoritma Weighted Probability terhadap Peluang Rare Item pada Sistem Gacha Game
 
-**Peneliti:** Helmi Bahar Alim
-**Target Publikasi:** Sinta 2 (Jurnal RESTI/Telematika) atau Scopus Q3–Q4
-**Status Penelitian:** Tahap 1–4 selesai; Tahap 5 (draf naskah jurnal) sedang berjalan ([../07-manuskrip/](../07-manuskrip/))
+**Peneliti:** Muhammad Firly Ramadhan
+**NIM:** 240202872
+**Mata Kuliah:** Riset Teknologi Informasi
+**Institusi:** Studi Ilmu Komputer, Fakultas Sains dan Teknologi, Universitas Putra Bangsa
+**Status Penelitian:** Seluruh tahap (Tahap 1–5) selesai; naskah jurnal final tersedia di ([../07-manuskrip/naskah-jurnal.md](../07-manuskrip/naskah-jurnal.md))
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Penelitian ini merancang, mengimplementasikan, dan mengevaluasi secara empiris mekanisme **Redis-PostgreSQL Hybrid Caching** sebagai mitigasi kerentanan **JWKS Endpoint Flooding** pada API Gateway berbasis Go (Echo). Evaluasi dilakukan melalui eksperimen terkontrol: satu gateway dengan dua mode operasi (`CACHE_MODE=none` sebagai baseline dan `CACHE_MODE=hybrid` sebagai mitigasi), diuji terhadap 5 varian traffic (legitimate, dua varian serangan, dan dua varian campuran) masing-masing 40 replikasi — total **400 pengujian beban** menggunakan k6, dengan pengukuran latensi, throughput, metrik internal gateway (Prometheus), dan penggunaan resource container (CPU/memori).
+Penelitian ini merancang, mengimplementasikan, dan mengevaluasi secara empiris perbandingan algoritma **Fixed Probability** (baseline) dengan **Weighted Probability** bersistem *pity* (intervensi) pada mekanisme gacha game. Evaluasi dilakukan melalui eksperimen komparatif berbasis simulasi komputasi Python dengan parameter yang identik — probabilitas dasar 0,6%, *soft pity* pull ke-50, *hard pity* pull ke-70 — terhadap populasi 100.000 responden virtual, diulang sebanyak **10 kali run** menggunakan *seed* yang berbeda-beda untuk menjamin keandalan statistik.
 
 **Temuan utama:**
 
-- Mitigasi **tidak menambah overhead** pada kondisi normal (latensi hybrid sedikit lebih rendah dari baseline).
-- Mitigasi **menurunkan beban query PostgreSQL sebesar 93,2%–99,997%** dan **CPU PostgreSQL dari 64–154% menjadi <2,5%** pada mayoritas skenario.
-- Mitigasi **melindungi latensi traffic legitimate** saat sistem diserang ($D_{perf}$ p95 = -92,9% pada `mixed-unique`, -39,5% pada `mixed-pool`).
-- Ditemukan **trade-off**: pada pola serangan dengan `kid` selalu baru (`*-unique`), rate-limiting berbasis UPSERT per `client_ip` di PostgreSQL menjadi titik kontensi *lock*, sehingga CPU PostgreSQL tetap tinggi (103–124%) dan latensi traffic penyerang pada mode hybrid justru lebih buruk daripada baseline.
+- Algoritma *Weighted Probability* **memangkas rata-rata jumlah pull sebesar ~72,4%** — dari rata-rata 167,91 pull (Fixed) menjadi 46,35 pull (Weighted).
+- *Cumulative probability* kedua kondisi hampir identik pada pull ke-1 hingga ke-49 (selisih < 5%), lalu **divergen tajam setelah *soft pity*** karena injeksi bobot linear.
+- Pada *hard pity* (pull ke-70), sistem Weighted telah menjamin **100% pemain mendapat *rare item***, sementara Fixed hanya mencapai ~34% populasi.
+- Sistem Weighted **mengeliminasi ekor distribusi tak terbatas** (*extreme variance*) yang ada pada sistem Fixed, menjamin batas pengeluaran maksimum bagi pemain.
 
-Seluruh kode sumber, data eksperimen, skrip analisis, tabel, dan figure tersedia di repository ini (lihat §7 Lampiran untuk peta artefak).
+Seluruh kode sumber, data eksperimen (10 run × 100.000 iterasi), skrip analisis, tabel, dan figure tersedia di repositori ini.
 
 ---
 
@@ -27,149 +29,159 @@ Seluruh kode sumber, data eksperimen, skrip analisis, tabel, dan figure tersedia
 
 ### 2.1 Latar Belakang
 
-API Gateway pada arsitektur microservices umumnya memvalidasi JSON Web Token (JWT) dengan mengambil kunci publik penandatangan dari *JSON Web Key Set* (JWKS) berdasarkan *Key ID* (`kid`) pada header token. Pada implementasi naif, setiap `kid` yang belum dikenal memicu *lookup* baru ke backing store (database/Identity Service). Penyerang dapat mengeksploitasi pola ini — yang dalam penelitian ini disebut **JWKS Endpoint Flooding** (selaras dengan kelas kerentanan CVE-2026-48524, perlu diverifikasi — lihat [../02-literatur/matriks-literatur.md](../02-literatur/matriks-literatur.md)) — dengan membanjiri gateway menggunakan JWT ber-`kid` acak, sehingga beban *lookup* ke database bertumbuh linear terhadap *request rate* penyerang dan berpotensi menyebabkan *resource exhaustion* yang menurunkan kualitas layanan bagi pengguna sah.
+Sistem *gacha* merupakan mekanisme distribusi item virtual berbasis probabilitas yang lazim digunakan pada game mobile modern sebagai strategi monetisasi. Pada implementasi awal, sistem ini bergantung pada **Fixed Probability** — yaitu peluang mendapatkan *rare item* yang konstan di setiap percobaan (*pull*). Mekanisme ini menyimpan celah berupa **ketidakpastian ekstrem** (*extreme variance*): seorang pemain bisa gagal beratus-ratus kali secara berturut-turut, yang berujung pada frustrasi dan penurunan retensi pemain.
+
+Untuk mengatasi kelemahan tersebut, game gacha modern berevolusi menggunakan **Weighted Probability** yang dipadukan dengan *pity system*. Melalui mekanisme *soft pity* dan *hard pity*, sistem secara dinamis meningkatkan peluang pemain setelah serangkaian kegagalan hingga akhirnya memberikan jaminan pasti (100%) pada threshold tertentu. Namun, meskipun implementasi ini sangat lazim, dampak aktual dari algoritma dinamis ini terhadap *cumulative probability* secara kuantitatif masih kurang terdokumentasi dalam literatur akademik — mayoritas penelitian lebih berfokus pada dampak psikologis, perilaku perjudian, dan model penetapan harga.
 
 ### 2.2 Rumusan Masalah
 
-1. Bagaimana merancang mekanisme caching pada API Gateway yang membatasi dampak JWKS Endpoint Flooding terhadap beban database backend, tanpa menambah latensi signifikan pada traffic legitimate?
-2. Seberapa besar efektivitas skema Redis-PostgreSQL Hybrid Caching (positive cache, negative cache, rate limiting berbasis PostgreSQL) dalam menurunkan beban query database dan penggunaan CPU selama serangan?
-3. Bagaimana dampak ($D_{perf}$) mitigasi terhadap latensi traffic legitimate, baik pada kondisi normal maupun saat berjalan bersamaan dengan traffic serangan?
-4. Apakah strategi serangan `kid` selalu baru (`unique`) vs `kid` berulang dari pool kecil (`pool`) menghasilkan efektivitas dan trade-off mitigasi yang berbeda?
+> **Research Question:** Seberapa besar signifikansi perbedaan *cumulative probability* dan jumlah rata-rata *pull* dalam memperoleh *rare item* antara sistem *Weighted Probability* dibandingkan sistem *Fixed Probability*?
 
-### 2.3 Tujuan Penelitian
+### 2.3 Hipotesis
 
-Detail tujuan & kontribusi: lihat [../01-proposal/proposal-penelitian.md](../01-proposal/proposal-penelitian.md) §3 dan §5, serta [../07-manuskrip/02-pendahuluan.md](../07-manuskrip/02-pendahuluan.md).
+Terdapat peningkatan *cumulative probability* yang signifikan dan penurunan rata-rata jumlah *pull* pada penerapan intervensi *weighted probability* dibandingkan baseline *fixed probability*, terutama saat jumlah percobaan mendekati batas *pity threshold*.
+
+### 2.4 Tujuan Penelitian
+
+1. Menganalisis dan membandingkan secara kuantitatif distribusi *cumulative probability* perolehan *rare item* antara algoritma Fixed Probability dan Weighted Probability.
+2. Mengukur selisih rata-rata jumlah *pull* (*Average Pulls to Rare*) antara kedua kondisi.
+3. Mengidentifikasi titik divergensi signifikan pada kurva kumulatif kedua algoritma.
+4. Menghasilkan *prototype* simulator gacha yang dapat digunakan untuk penelitian lanjutan.
 
 ---
 
 ## 3. Metodologi dan Pelaksanaan
 
-Penelitian dilaksanakan dalam 5 tahap. Bagian ini merangkum implementasi dan verifikasi setiap tahap; detail teknis lengkap ada pada dokumen `09-docs/tahap-N-*.md` yang dirujuk.
+Penelitian dilaksanakan dalam 5 tahap (studi literatur → desain eksperimen → implementasi → eksekusi & pengumpulan data → analisis & penulisan). Bagian ini merangkum implementasi dan verifikasi setiap tahap.
 
-### 3.1 Tahap 1 — Perancangan Arsitektur & Skema Database
+### 3.1 Tahap 1 — Studi Literatur & Perumusan Masalah
 
-**Status: Selesai.** Dirancang arsitektur tiga komponen (Gateway Go/Echo, Redis sebagai L1 cache murni, PostgreSQL sebagai L2/*source of truth*), alur resolusi kunci (positive cache → negative cache → rate-limit PostgreSQL → query `signing_keys`), skema tabel `signing_keys` dan `rate_limit_counters` (dengan *stored procedure* `upsert_rate_limit_counter` untuk UPSERT atomik), dan skema key Redis (`jwks:kid:<kid>`, `jwks:negative:<kid>`). Mode eksperimen `CACHE_MODE=none|hybrid` dirancang sejak tahap ini agar perbandingan baseline-vs-mitigated dapat dilakukan pada infrastruktur identik.
+**Status: Selesai.** Dilakukan kajian literatur terhadap 10+ referensi yang mencakup topik: algoritma probabilitas pada sistem *loot box* dan *gacha* (Fixed vs Weighted), *pity system* (soft pity, hard pity), dampak gacha terhadap perilaku konsumtif dan psikologi pemain, serta regulasi transparansi probabilitas dan monetisasi game. Ditemukan *research gap*: studi yang secara spesifik mengukur perbedaan *cumulative probability* secara komparatif menggunakan simulasi masih terbatas.
 
-Detail & diagram: [../09-docs/tahap-1-arsitektur-dan-skema-database.md](../09-docs/tahap-1-arsitektur-dan-skema-database.md), [../03-teori/arsitektur-dan-skema.md](../03-teori/arsitektur-dan-skema.md).
+### 3.2 Tahap 2 — Perancangan Eksperimen & Desain Simulasi
 
-### 3.2 Tahap 2 — Implementasi API Gateway (Go)
+**Status: Selesai.** Dirancang eksperimen komparatif dua kondisi dengan parameter identik:
+- **Kondisi A (Baseline):** Fixed Probability — $p = 0,006$ konstan setiap pull.
+- **Kondisi B (Intervensi):** Weighted Probability + *pity system* — $p$ meningkat secara linear setelah pull ke-50 (*soft pity*), mencapai $p = 1,0$ pada pull ke-70 (*hard pity*).
 
-**Status: Selesai.** Gateway diimplementasikan dengan struktur *clean architecture* per *bounded context* (`internal/jwks`, `internal/ratelimit`, `internal/jwtauth`, `internal/httpapi`, `internal/platform`, `internal/metrics`), menggunakan Echo, `pgx`/`pgxpool`, `go-redis/redis/v9`, `golang-jwt/jwt/v5`, dan `prometheus/client_golang`. Deliverable: migrasi SQL (Sqitch), skrip seed (generate RSA-2048 keypair + sample JWT), middleware verifikasi JWT dengan resolusi `kid` untuk kedua mode, endpoint `/api/resource`, `/healthz`, `/metrics`, serta `docker-compose.yml` dengan healthcheck.
+Fungsi probabilitas Kondisi B pada pull ke-$x$:
+- Jika $x < 50$: $P(x) = 0,006$
+- Jika $50 \le x < 70$: $P(x) = 0,006 + \frac{x - 49}{70 - 50}$
+- Jika $x = 70$: $P(x) = 1,0$
 
-**Verifikasi end-to-end** (manual via curl, kedua mode):
-- *Hybrid*: kid valid → `200` (cache miss → DB → fill cache → cache hit pada request berikutnya); kid tidak dikenal → `401 invalid_kid` (negative cache, tidak ada query DB berulang); flood concurrent kid unik → sebagian `429 rate_limited` setelah >20 req/detik per `client_ip`.
-- *None*: kid valid selalu `200` dengan `jwksgw_db_queries_total{resolve_key}` naik 1:1 per request; tidak pernah `429`.
-- *Fail-closed/fail-open*: PostgreSQL down → `503` (kedua mode); Redis down (hybrid) → kid ter-cache tetap `200` (fallback PostgreSQL), `/healthz` melaporkan `redis:false`.
+Variabel kontrol: probabilitas dasar (0,6%), jumlah responden virtual (100.000), dan spesifikasi RNG Python (`random.random()`).
 
-Catatan lingkungan: PostgreSQL container di-expose ke host pada port 5433 (hindari konflik port lokal); migrasi diverifikasi via `psql` langsung (Sqitch CLI di mesin dev tidak memiliki driver `DBD::Pg`).
+### 3.3 Tahap 3 — Implementasi Simulator (Python)
 
-Detail: [../09-docs/tahap-2-implementasi-gateway.md](../09-docs/tahap-2-implementasi-gateway.md), kode: [../05-kode/gateway/](../05-kode/gateway/).
-
-### 3.3 Tahap 3 — Pengujian Beban k6
-
-**Status: Selesai — matrix 400 run (40 replikasi) telah dijalankan.** Disusun 3 skrip k6 (`legitimate.js`, `attack.js` dengan `KID_STRATEGY=unique|pool`, `mixed.js` yang menjalankan keduanya secara paralel dengan Trend custom per skenario), runner `run-scenario.sh` (restart gateway sesuai mode, health check, snapshot `/metrics` sebelum/sesudah, jalankan k6, monitor resource), `run-matrix.sh` (loop replikasi × kombinasi mode/varian), dan `monitor-resources.sh` (`docker stats` polling ~3s).
-
-**Iterasi desain penting**: percobaan awal menggunakan `k6 run --out json=...` menghasilkan **139 MB** data mentah hanya untuk 15 detik pengujian — tidak layak untuk matrix penuh. Solusi: ganti ke `--summary-export` (ringkasan agregat) + snapshot `/metrics` gateway before/after (delta = ground truth jumlah query/cache/rate-limit) + Trend custom di `mixed.js`. Hasil: total ukuran matrix awal 50 run **~1,7 MB**.
-
-**Matrix awal (5 replikasi, diarsipkan)**: `CACHE_MODE` ∈ {none, hybrid} × traffic_variant ∈ {legitimate, attack-unique, attack-pool, mixed-unique, mixed-pool} × replikasi 1–5 = **50 run**, dijalankan ~54 menit (2026-06-12T18:05Z–18:59Z), seluruhnya `k6_exit_code = 0`. Dataset ini kemudian diarsipkan ke `04-data/_archive-50run-20260612/`.
-
-**Matrix final (40 replikasi)**: untuk memperbesar sampel statistik, replikasi diperluas menjadi 40 per kombinasi — `CACHE_MODE` ∈ {none, hybrid} × traffic_variant (5 varian) × replikasi 1–40 = **400 run**, dijalankan via `run-matrix.sh` pada 2026-06-15 (selesai `2026-06-15T09:53:24Z`), seluruhnya `k6_exit_code = 0`. Sebelum eksekusi, token JWT legitimate yang sebelumnya *expired* diregenerasi dan cache Redis di-*flush* agar matrix dimulai dari kondisi cache dingin. Dataset 400 run inilah yang menjadi sumber statistik final pada §4.
-
-Output per run: `k6-summary.json`, `gateway-metrics-{before,after}.txt`, `resources.csv`, `meta.json`, disimpan di `04-data/<cache_mode>__<traffic_variant>__rep<N>__<timestamp>/` (tidak disertakan dalam repository git — lihat `.gitignore` — namun seluruh skrip pembangkit tersedia untuk reproduksi).
-
-Detail: [../09-docs/tahap-3-pengujian-k6.md](../09-docs/tahap-3-pengujian-k6.md), kode: [../05-kode/k6/](../05-kode/k6/).
-
-### 3.4 Tahap 4 — Ekstraksi Data & Visualisasi
-
-**Status: Selesai.** Dibangun *pipeline* analisis Python (`05-kode/analysis/`, dijalankan via `python run_all.py`) terdiri dari:
+**Status: Selesai.** Prototype *gacha simulator* diimplementasikan dalam Python dengan struktur modul:
 
 | Modul | Fungsi |
 |---|---|
-| `common.py` | Helper baca artefak `04-data/<run-id>/` (k6 summary, meta, `/metrics`, `resources.csv`) |
-| `load_runs.py` | Bangun DataFrame tidy: ringkasan k6 per run, ringkasan resource, delta `/metrics` gateway |
-| `descriptive_stats.py` | Statistik deskriptif latensi/RPS per (cache_mode, traffic_variant) + breakdown legit vs attack pada mixed |
-| `compute_dperf.py` | Hitung $D_{perf}$ |
-| `resource_stats.py` | CPU%/memori per (cache_mode, traffic_variant, container) |
-| `gateway_metrics.py` | Metrik efektivitas mitigasi dari delta `jwksgw_*` |
-| `charts.py` | 5 figure PNG |
+| `gacha.py` | *Probability engine* + *pull simulator* + *cumulative probability calculator* + ekspor CSV |
+| `runner.py` | *Multi-run executor* — loop 10 seed berbeda, simpan output per-run ke `04-data/` |
+| `analysis.py` | Pipeline agregasi data 10 run → `aggregated_stats.csv` + plot `fig_cumulative_probability.png` |
 
-Output: 6 tabel CSV ([../06-output/tables/](../06-output/tables/)) dan 5 figure PNG ([../06-output/figures/](../06-output/figures/)). Detail & hasil: [../09-docs/tahap-4-analisis-data.md](../09-docs/tahap-4-analisis-data.md).
+**Verifikasi fungsional:**
+- Kondisi A: setiap pull independen, $p$ konstan 0,6% ✔
+- Kondisi B: $p$ tetap 0,006 sampai pull ke-49; meningkat linear mulai pull ke-50; forced $p = 1,0$ pada pull ke-70 ✔
+- Output CSV per run tervalidasi (71 baris data: pull ke-1 s.d. ke-70 + header) ✔
+- Reproduktibilitas terjamin via seed eksplisit sebelum setiap run ✔
 
-### 3.5 Tahap 5 — Draf Naskah Jurnal
+### 3.4 Tahap 4 — Eksekusi Eksperimen & Pengumpulan Data
 
-**Status: Sedang berjalan.** Draf konten per bagian naskah (Abstrak, Pendahuluan, Tinjauan Pustaka, Metodologi, Hasil & Analisis, Kesimpulan, Daftar Pustaka) telah disusun di [../07-manuskrip/](../07-manuskrip/), siap dipindahkan ke template jurnal tujuan. Bagian yang masih perlu dilengkapi: Tinjauan Pustaka (*related work*, lihat [../02-literatur/matriks-literatur.md](../02-literatur/matriks-literatur.md)), verifikasi nomor CVE, dan keputusan bahasa final naskah.
+**Status: Selesai — matrix 10 run telah dijalankan.**
+
+**Execution plan:**
+
+| Run # | Seed | Status | Output File |
+|-------|------|--------|-------------|
+| 1 | 42 | ✔ Selesai | `hasil_simulasi_gacha_1.csv` |
+| 2 | 123 | ✔ Selesai | `hasil_simulasi_gacha_2.csv` |
+| 3 | 999 | ✔ Selesai | `hasil_simulasi_gacha_3.csv` |
+| 4 | 2026 | ✔ Selesai | `hasil_simulasi_gacha_4.csv` |
+| 5 | 8888 | ✔ Selesai | `hasil_simulasi_gacha_5.csv` |
+| 6 | 111 | ✔ Selesai | `hasil_simulasi_gacha_6.csv` |
+| 7 | 2222 | ✔ Selesai | `hasil_simulasi_gacha_7.csv` |
+| 8 | 3333 | ✔ Selesai | `hasil_simulasi_gacha_8.csv` |
+| 9 | 4444 | ✔ Selesai | `hasil_simulasi_gacha_9.csv` |
+| 10 | 5555 | ✔ Selesai | `hasil_simulasi_gacha_10.csv` |
+
+**Total iterasi:** 10 run × 2 kondisi × 100.000 responden virtual = **2.000.000 simulasi pull**.
+
+Output per run: `hasil_simulasi_gacha_N.csv` (kolom: `Pull_Ke`, `Cumulative_Probability_Fixed`, `Cumulative_Probability_Weighted`), disimpan di `04-data/`. Tidak ada anomali atau run gagal.
+
+### 3.5 Tahap 5 — Analisis Data, Visualisasi & Penulisan Naskah
+
+**Status: Selesai.** Pipeline analisis Python (`analysis.py`) membaca 10 file CSV, melakukan agregasi rata-rata per `Pull_Ke`, menghasilkan:
+- **`aggregated_stats.csv`** — statistik rata-rata kumulatif 10 run ([../06-output/tables/](../06-output/tables/))
+- **`fig_cumulative_probability.png`** — grafik perbandingan kedua algoritma ([../06-output/figures/](../06-output/figures/))
+
+Draf naskah jurnal lengkap (Abstrak, Pendahuluan, Tinjauan Pustaka, Metodologi, Hasil & Analisis, Kesimpulan, Daftar Pustaka) telah disusun di [../07-manuskrip/naskah-jurnal.md](../07-manuskrip/naskah-jurnal.md).
 
 ---
 
 ## 4. Hasil Penelitian
 
-Ringkasan hasil (detail lengkap & interpretasi: [../07-manuskrip/05-hasil-analisis.md](../07-manuskrip/05-hasil-analisis.md) dan [../09-docs/tahap-4-analisis-data.md](../09-docs/tahap-4-analisis-data.md)).
+### 4.1 Rata-Rata Jumlah Pull (*Average Pulls to Rare*)
 
-### 4.1 D_perf — Dampak Mitigasi terhadap Traffic Legitimate
-
-| Kondisi | Metrik | T_none (ms) | T_hybrid (ms) | $D_{perf}$ |
-|---|---|---|---|---|
-| `legitimate` (tanpa serangan) | avg | 0,6905 | 0,6301 | -8,8% |
-| `legitimate` (tanpa serangan) | p95 | 1,0384 | 1,0063 | -3,1% |
-| Traffic legit dalam `mixed-unique` | avg | 10,4183 | 0,7721 | -92,6% |
-| Traffic legit dalam `mixed-unique` | p95 | 19,4384 | 1,3839 | -92,9% |
-| Traffic legit dalam `mixed-pool` | avg | 10,7468 | 5,7595 | -46,4% |
-| Traffic legit dalam `mixed-pool` | p95 | 20,5135 | 12,4138 | -39,5% |
-
-### 4.2 Penurunan Beban Query PostgreSQL
-
-| traffic_variant | db_queries `none` (mean) | db_queries `hybrid` (mean) | Reduction |
-|---|---|---|---|
-| legitimate | 300.114,7 | 10,0 | 99,997% |
-| attack-unique | 907.845,5 | 61.894,1 | 93,182% |
-| attack-pool | 879.271,7 | 73,1 | 99,992% |
-| mixed-unique | 880.678,3 | 57.957,1 | 93,419% |
-| mixed-pool | 849.226,3 | 74,6 | 99,991% |
-
-### 4.3 Penggunaan CPU PostgreSQL
-
-| traffic_variant | CPU postgres `none` (mean%) | CPU postgres `hybrid` (mean%) |
+| Kondisi | Rata-Rata Pull | Keterangan |
 |---|---|---|
-| legitimate | 64,1 | 2,2 |
-| attack-unique | 158,3 | 124,4 |
-| attack-pool | 153,9 | 2,2 |
-| mixed-unique | 152,5 | 103,0 |
-| mixed-pool | 149,9 | 2,2 |
+| Kondisi A — Fixed Probability | **167,91 pull** | Sesuai ekspektasi teoretis geometrik $E(X) = 1/p = 166,\overline{6}$ |
+| Kondisi B — Weighted Probability | **46,35 pull** | Reduksi ~72,4% dibanding Fixed |
+
+Sistem *Weighted Probability* memangkas rata-rata jumlah pull sebesar **~72,4%** berkat eliminasi ekor distribusi panjang (*long tail*) oleh mekanisme *pity system*.
+
+### 4.2 Perbandingan *Cumulative Probability* pada Titik Kritis
+
+Data agregat dari 10 run (rata-rata dari `aggregated_stats.csv`):
+
+| Pull Ke-$N$ | Cum. Prob. Fixed | Cum. Prob. Weighted | Δ (Selisih) |
+|:---:|:---:|:---:|:---:|
+| 1 | 0,60% | 0,59% | ≈0% |
+| 10 | 5,82% | 5,84% | +0,02% |
+| 30 | 16,51% | 16,58% | +0,07% |
+| 50 (*Soft Pity*) | 25,96% | 29,78% | **+3,82%** |
+| 55 | 28,17% | 78,32% | **+50,15%** |
+| 60 | 30,31% | 99,01% | **+68,70%** |
+| 70 (*Hard Pity*) | 34,36% | **100,00%** | **+65,64%** |
+
+### 4.3 Analisis Divergensi Kurva
+
+Pergerakan *cumulative probability* kedua kondisi hampir identik dari pull ke-1 hingga ke-49, karena pada rentang tersebut Kondisi B masih beroperasi pada konstanta $p = 0,006$. Divergensi dramatis terjadi setelah *soft pity*:
+
+- Pull ke-55: Weighted **78,32%** vs Fixed **28,17%**
+- Pull ke-60: Weighted **99,01%** vs Fixed **30,31%**
+- Pull ke-70: Weighted **100,00%** (hard pity terjamin) vs Fixed **34,36%**
+
+Pada pull ke-70, lebih dari **65% populasi sistem Fixed masih belum mendapatkan *rare item*** — inilah *extreme variance* yang dieliminasi oleh *Weighted Probability*.
 
 ### 4.4 Figure
 
 | File | Isi |
 |---|---|
-| [`fig_latency_p95.png`](../06-output/figures/fig_latency_p95.png) | Latensi p95 per traffic_variant: none vs hybrid |
-| [`fig_dperf.png`](../06-output/figures/fig_dperf.png) | $D_{perf}$ (avg & p95) untuk 3 perbandingan |
-| [`fig_db_queries_reduction.png`](../06-output/figures/fig_db_queries_reduction.png) | Total query PostgreSQL per run (log scale) |
-| [`fig_postgres_cpu.png`](../06-output/figures/fig_postgres_cpu.png) | CPU% rata-rata container PostgreSQL |
-| [`fig_resource_timeseries.png`](../06-output/figures/fig_resource_timeseries.png) | Time-series CPU PostgreSQL selama `mixed-pool` rep1 |
+| [`fig_cumulative_probability.png`](../06-output/figures/fig_cumulative_probability.png) | Grafik komparatif *Cumulative Probability* (%) Fixed vs Weighted per pull (pull ke-1 s.d. ke-70), dilengkapi penanda *soft pity* (garis merah) dan *hard pity* (garis hijau) |
 
 ### 4.5 Interpretasi Singkat
 
-1. Mitigasi tidak menambah overhead pada kondisi normal — bahkan sedikit lebih cepat (positive cache hit ratio ≈ 99,997%).
-2. Mitigasi melindungi pengalaman pengguna sah secara signifikan saat sistem diserang (D_perf p95 hingga -92,9%).
-3. Reduction beban query PostgreSQL 93,2%–99,997% dan CPU PostgreSQL turun ke <2,5% pada skenario `legitimate`, `attack-pool`, `mixed-pool`.
-4. **Trade-off**: pada `*-unique`, rate-limiting berbasis UPSERT per `client_ip` menjadi titik kontensi *lock* — CPU PostgreSQL hybrid tetap 103–124% dan latensi traffic penyerang pada hybrid lebih buruk dibanding `none`. Traffic legitimate tetap terlindungi.
+1. **Fase identik (pull 1–49):** Kedua algoritma menghasilkan *cumulative probability* yang hampir sama — sistem Weighted belum mengaktifkan mekanisme pembobotannya.
+2. **Fase divergensi (*soft pity*, pull 50–69):** Injeksi bobot linear pada Weighted menyebabkan *cumulative probability* meroket — mencapai ~99% pada pull ke-60, jauh melampaui ~30% pada Fixed.
+3. **Fase jaminan (*hard pity*, pull 70):** Weighted mencapai 100% persis pada pull ke-70; Fixed hanya ~34%.
+4. **Trade-off:** Penurunan rata-rata pull dari 167,91 → 46,35 memotong potensi pendapatan dari pemain yang sangat tidak beruntung, namun meningkatkan kepuasan dan retensi pemain secara keseluruhan — keseimbangan yang disengaja oleh perancang game.
 
 ---
 
-## 5. Kendala dan Catatan Lingkungan
+## 5. Kendala dan Catatan Pelaksanaan
 
-- **Output k6 mentah (`--out json=`) tidak skalabel** (139 MB/15s) — diatasi dengan `--summary-export` + snapshot `/metrics` + Trend custom (lihat §3.3).
-- **Direktori run data kadang terkunci sementara** (`Device or resource busy`) pada Windows/Docker Desktop setelah `docker run --rm` dengan bind mount — transient, hilang sendiri setelah beberapa saat, tidak memerlukan penanganan kode.
-- **`MSYS_NO_PATHCONV=1`** diperlukan pada `docker run` via Git Bash (Windows) agar path container tidak diterjemahkan ke path Windows oleh MSYS.
-- **Sqitch CLI** di mesin development tidak memiliki driver `DBD::Pg` — migrasi diverifikasi via `psql` langsung; `migrations/` tetap menjadi dokumentasi resmi deploy/revert/verify.
-- **PostgreSQL container** di-expose pada port 5433 (bukan 5432 default) untuk menghindari konflik dengan instance PostgreSQL lokal.
+- **Manajemen state RNG global:** Modul `gacha.py` memanggil `random.seed(RANDOM_SEED)` di level modul saat pertama kali diimpor. Pada `runner.py`, seed di-override via `random.seed(seed)` sebelum tiap run — ini sudah berfungsi karena `runner.py` memanggil ulang `random.seed()` setelah import. Untuk reproduktibilitas penuh di masa mendatang, disarankan memisahkan instance `random.Random()` per run alih-alih menggunakan state global.
+- **Cakupan simulasi terbatas:** Simulasi merepresentasikan satu banner/sesi tanpa mempertimbangkan mekanisme *shared pity* antar banner, *featured vs standard pool*, atau *guarantee carry-over* yang umum di game modern (misal sistem 50/50 di Genshin Impact). Ini merupakan batasan yang disadari dan telah didokumentasikan di §6.2 Saran naskah jurnal.
+- **Ukuran sampel sudah memadai:** 100.000 iterasi per kondisi per run cukup untuk menormalkan variansi RNG pada probabilitas 0,6% — hasil antar 10 run konsisten dengan variasi < 0,5% pada titik kritis.
+- **Tidak ada anomali run:** Seluruh 10 run menghasilkan output yang valid; tidak ada yang perlu dieksklusi.
 
 ---
 
 ## 6. Kesimpulan dan Saran
 
-Ringkasan kesimpulan & saran penelitian lanjutan: lihat [../07-manuskrip/06-kesimpulan.md](../07-manuskrip/06-kesimpulan.md).
-
-Inti kesimpulan: skema **Redis-PostgreSQL Hybrid Caching** efektif memitigasi JWKS Endpoint Flooding — tanpa overhead pada kondisi normal, melindungi traffic legitimate secara signifikan saat diserang, dan memangkas beban PostgreSQL 93–99,997% pada mayoritas skenario — dengan satu trade-off teridentifikasi pada desain rate-limiting berbasis baris counter tunggal per klien saat pola serangan menggunakan `kid` yang selalu baru.
+**Inti kesimpulan:** Algoritma *Weighted Probability* dengan *pity system* terbukti secara empiris jauh lebih menguntungkan pemain dibandingkan *Fixed Probability*. Dengan rata-rata hanya **46,35 pull** (vs 167,91 pada Fixed) dan jaminan 100% pada pull ke-70, sistem ini mengeliminasi *extreme variance* sekaligus memberikan batas pengeluaran maksimum yang transparan — menjawab *research question* dengan kesimpulan bahwa perbedaan antara kedua algoritma **signifikan dan bermakna** terutama setelah threshold *soft pity*.
 
 ---
 
@@ -177,27 +189,12 @@ Inti kesimpulan: skema **Redis-PostgreSQL Hybrid Caching** efektif memitigasi JW
 
 | Folder | Isi | Status |
 |---|---|---|
-| [01-proposal/](../01-proposal/) | Proposal penelitian | Selesai |
-| [02-literatur/](../02-literatur/) | Matriks literatur (kerangka, perlu dilengkapi) | Kerangka tersedia |
-| [03-teori/](../03-teori/) | Diagram arsitektur & skema (Tahap 1) | Selesai |
-| [04-data/](../04-data/) | Data mentah 400 run/40 replikasi (tidak di-commit, lihat `.gitignore`; matrix awal 50 run/5 replikasi diarsipkan di `_archive-50run-20260612/`) | Tersedia lokal |
-| [05-kode/gateway/](../05-kode/gateway/) | Source code API Gateway (Go) | Selesai |
-| [05-kode/k6/](../05-kode/k6/) | Skrip pengujian beban k6 | Selesai |
-| [05-kode/analysis/](../05-kode/analysis/) | Pipeline analisis Python | Selesai |
-| [06-output/](../06-output/) | Tabel & figure hasil analisis | Selesai |
-| [07-manuskrip/](../07-manuskrip/) | Draf naskah jurnal (Tahap 5) | Sedang berjalan |
-| [08-laporan/](../08-laporan/) | Laporan penelitian (dokumen ini) | Selesai |
-| [09-docs/](../09-docs/) | Dokumen rencana & status tiap tahap | Selesai |
+| [01-proposal/](../01-proposal/) | Proposal penelitian (latar belakang, RQ, metode, jadwal) | ✔ Selesai |
+| [02-literatur/](../02-literatur/) | Matriks literatur (10 referensi, peta gap penelitian) + BibTeX | ✔ Selesai |
+| [03-teori/](../03-teori/) | Diagram arsitektur sistem simulasi & skema parameter | ✔ Selesai |
+| [04-data/](../04-data/) | Data mentah 10 run × CSV (*cumulative probability* per pull ke-1–70) | ✔ Tersedia |
+| [05-kode/](../05-kode/) | Source code simulator Python (`gacha.py`, `runner.py`, `analysis.py`) | ✔ Selesai |
+| [06-output/](../06-output/) | Tabel agregat (`aggregated_stats.csv`) & figure (`fig_cumulative_probability.png`) | ✔ Selesai |
+| [07-manuskrip/](../07-manuskrip/) | Naskah jurnal lengkap (siap submit) | ✔ Selesai |
+| [08-laporan/](../08-laporan/) | Laporan penelitian ini (dokumen ini) | ✔ Selesai |
 
-**Cara reproduksi penuh:**
-
-```bash
-# Tahap 2: jalankan gateway (lihat 05-kode/gateway/README.md)
-cd 05-kode/gateway && docker compose up -d
-
-# Tahap 3: jalankan matrix 400 run / 40 replikasi (lihat 05-kode/k6/README.md)
-cd 05-kode/k6 && ./run-matrix.sh
-
-# Tahap 4: jalankan pipeline analisis
-cd 05-kode/analysis && python run_all.py
-```
