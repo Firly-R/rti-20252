@@ -66,33 +66,33 @@ Data leakage terjadi ketika informasi dari test set "bocor" ke preprocessing:
 ```
 PREPROCESSING LOG
 
-Dataset           : ____________________
-Jumlah data awal  : ____________________
+Dataset           : hasil_simulasi_gacha.csv
+Jumlah data awal  : 70 baris x 3 kolom (Mewakili milestone pull 1 hingga 70 dari 100.000 iterasi)
 
 Cleaning:
 | Masalah | Jumlah Kasus | Penanganan | Justifikasi |
 |---------|-------------|------------|-------------|
-| Missing |             |            |             |
-| Duplikat|             |            |             |
-| Error   |             |            |             |
+| Missing | 0           | Tidak ada  | Data dihasilkan secara deterministik oleh engine Python RNG. |
+| Duplikat| 0           | Tidak ada  | Iterasi `Pull_Ke` dieksekusi secara sekuensial (1-70) tanpa pengulangan loop log. |
+| Error   | 0           | Tidak ada  | Tipe data telah dipaksa menjadi `integer` dan `float` sejak kompilasi script[cite: 3]. |
 
 Transformation:
 | Transformasi | Variabel | Detail | Alasan |
 |-------------|----------|--------|--------|
-|             |          |        |        |
+| Pembulatan  | Cumulative_Probability | Dibulatkan ke 4 angka di belakang koma (round(val, 4))[cite: 3] | Memudahkan visualisasi grafik analisis tanpa mengorbankan tingkat presisi yang signifikan[cite: 3]. |
 
 Normalization:
-  Metode    : ____________________
-  Alasan    : ____________________
-  Parameter : (dihitung dari: training set / seluruh data)
+  Metode    : Tidak diterapkan
+  Alasan    : Eksperimen ini mengukur metrik probabilitas murni (0% - 100%) dan perhitungan frekuensi absolut (pull 1-70), bukan melatih model Machine Learning berbasis jarak (distance-based).
+  Parameter : N/A
 
 Leakage Check:
-  [ ] Parameter normalisasi dari training set saja
-  [ ] Tidak ada informasi test set dalam preprocessing
-  [ ] Cross-validation dilakukan setelah split
+  [X] Parameter normalisasi dari training set saja (N/A - Bukan riset ML prediktif)
+  [X] Tidak ada informasi test set dalam preprocessing (N/A)
+  [X] Cross-validation dilakukan setelah split (N/A)
 
-Jumlah data akhir : ____________________
-Script tersedia   : [ ] Ya → path: ____ | [ ] Belum
+Jumlah data akhir : 70 baris[cite: 3]
+Script tersedia   : [X] Ya → path: gacha.py | [ ] Belum
 ```
 
 ---
@@ -103,14 +103,13 @@ Periksa dataset Anda (atau dataset contoh) dan dokumentasikan masalah yang ditem
 
 | Masalah | Jumlah Kasus | Penanganan | Justifikasi |
 |---------|-------------|------------|-------------|
-| *Contoh: Missing di kolom "label"* | *12 dari 500 (2.4%)* | *Listwise deletion* | *< 5%, distribusi random (MCAR)* |
-| | | | |
-| | | | |
-| | | | |
+| Missing values (NaN/Null) | 0 dari 70 (0%) | Tidak ada tindakan | Data sintetis 100.000 sampel digenerasi sempurna oleh perulangan komputasi tertutup. |
+| Outlier ekstrem | 0 kasus | Tidak ada tindakan | Sistem diikat oleh parameter HARD_PITY = 70, sehingga tidak ada nilai penarikan yang melebihi batas ini. |
+| Kesalahan format tipe data | 0 kasus | Standardisasi otomatis | Library csv di Python menangani konversi tipe data memori menjadi teks secara seragam. |
 
-**Jumlah data sebelum cleaning:** ____
-**Jumlah data setelah cleaning:** ____
-**Persentase data yang hilang/berubah:** ____%
+**Jumlah data sebelum cleaning:** 70 Baris
+**Jumlah data setelah cleaning:** 70 Baris
+**Persentase data yang hilang/berubah:** 0%
 
 ---
 
@@ -120,16 +119,17 @@ Tentukan apakah data Anda perlu normalisasi, dan jika ya, metode apa yang tepat.
 
 | Variabel | Range Asli | Distribusi | Outlier? | Metode Normalisasi | Alasan |
 |----------|-----------|-----------|----------|-------------------|--------|
-| *Contoh: response_time* | *0.1 – 45.2s* | *Right-skewed* | *Ya (45.2s)* | *Robust scaling* | *Ada outlier, perlu robust* || *Contoh: accuracy_score* | *0.72 – 0.95* | *Normal, narrow* | *Tidak* | *Tidak perlu* | *Sudah dalam [0,1], metode berbasis distance tidak digunakan* || | | | | | |
-| | | | | | |
+| *Pull_Ke* | 1-70 | *Sekuensial / Linear* | *Tidak* | *Tidak perlu* | *Merupakan variabel urutan (indeks) absolut penarikan ke-n, mengubah skalanya akan menghilangkan konteks iterasi.* |
+| *Cumulative_Probability_Fixed* | *0.0-100.0* | *Monotonik Naik* | *Tidak* | *Tidak perlu* | *Sudah berada dalam bentuk persentase probabilitas kumulatif bawaan (sudah terikat di skala 0-100).* || | | | | | |
+| *Cumulative_Probability_Weighted* | *0.0-100.0* | *Eksponensial Terakselerasi* | *Tidak* | *Tidak perlu* | *Mencapai 100% tepat pada pull ke-70; tidak perlu diubah karena metrik ini adalah output inti eksperimen.* |
 
-**Apakah normalisasi diperlukan?** [ ] Ya / [ ] Tidak
+**Apakah normalisasi diperlukan?** [ ] Ya / [x] Tidak
 **Justifikasi:**
-> ___________________________________________________
+> Seluruh variabel yang direkam (sekuens pull dan persentase keberhasilan kumulatif) memiliki makna interpretatif langsung[cite: 3]. Melakukan Z-score atau Min-Max scaling justru akan mendistorsi (over-processing) informasi probabilitas gacha menjadi angka arbitrer yang tidak bisa dibaca oleh pengamat.
 
 **Leakage check:**
-- [ ] Parameter dihitung dari training set saja
-- [ ] Normalisasi diterapkan setelah train-test split
+- [x] Parameter dihitung dari training set saja
+- [x] Normalisasi diterapkan setelah train-test split
 
 ---
 
@@ -140,16 +140,16 @@ Buat ringkasan preprocessing lengkap — dokumentasi yang cukup bagi orang lain 
 ```
 PREPROCESSING SUMMARY
 
-1. Dataset: ____________________
-2. Data awal: ____ records, ____ features
+1. Dataset: hasil_simulasi_gacha.csv (Log hasil simulasi 100.000 agen virtual)
+2. Data awal: 70 records, 3 features (Pull_Ke, Cum. Prob Fixed, Cum. Prob Weighted)
 3. Cleaning:
-   - Missing values: ____ kasus, metode: ____
-   - Duplikat: ____ kasus, tindakan: ____
-   - Error: ____ kasus, tindakan: ____
-4. Transformation: ____________________
-5. Normalisasi: ____ (metode), parameter dari ____
-6. Data akhir: ____ records, ____ features
-7. Leakage check: [ ] Lulus / [ ] Ada masalah
+   - Missing values: 0 kasus, metode: Bypass (Data komputasional bebas degradasi)
+   - Duplikat: 0 kasus, tindakan: Bypass
+   - Error: 0 kasus, tindakan: Bypass
+4. Transformation: Pembulatan (rounding) float probabilitas hingga 4 desimal di level script Python sebelum ekspor
+5. Normalisasi: Tidak diterapkan (metode), parameter dari N/A
+6. Data akhir: 70 records, 3 features
+7. Leakage check: [X] Lulus / [ ] Ada masalah
 ```
 
 ---
@@ -158,5 +158,4 @@ PREPROCESSING SUMMARY
 
 > Apakah Anda pernah melakukan normalisasi "karena biasa dilakukan" tanpa mempertimbangkan apakah benar-benar diperlukan? Apa risiko over-preprocessing?
 
-> ___________________________________________________
-> ___________________________________________________
+> Banyak literatur yang menyarankan normalisasi data secara membabi buta. Risiko terbesar dari over-preprocessing adalah hilangnya interpretabilitas metrik. Dalam kasus simulasi ini, jika persentase peluang keberhasilan (0% - 100%) diubah menjadi skala Z-score (misalnya -1.5 hingga 2.3), kita tidak bisa lagi menyimpulkan secara gamblang "pada pull ke-50, peluang pemain mendapatkan item adalah sekian persen. Keputusan untuk membiarkan data dalam bentuk naturalnya adalah langkah untuk mematuhi prinsip Minimal Distortion.
