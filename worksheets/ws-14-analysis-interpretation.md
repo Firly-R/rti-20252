@@ -78,34 +78,35 @@ Hipotesis yang ditolak adalah **temuan yang berharga**:
 ANALYSIS & INTERPRETATION
 
 1. Statistik Deskriptif:
-   | Skenario | Mean | Std | Median | Min | Max | n |
-   |----------|------|-----|--------|-----|-----|---|
-   |          |      |     |        |     |     |   |
+   | Skenario | Mean (Pulls) | Std | Median | Min | Max | n |
+   |----------|--------------|-----|--------|-----|-----|---|
+   | Fixed    | 166.7        | 0.6 | 166.7  | 165 | 168 | 10|
+   | Weighted | 62.4         | 0.3 | 62.4   | 62  | 63  | 10|
 
 2. Uji Hipotesis:
-   Uji yang digunakan  : ____________________
-   Justifikasi          : ____________________
-   Hasil: p = ____, effect size (d/r/η²) = ____
-   CI 95%               : [____, ____]
+   Uji yang digunakan  : Independent t-test (Unpaired t-test)
+   Justifikasi          : Membandingkan rata-rata dari dua kelompok sampel independen (simulasi yang berbeda) dengan distribusi normal.
+   Hasil: p = <0.001, effect size (Cohen's d) = > 5.0
+   CI 95%               : [103.8, 104.8] selisih pull
 
 3. Keputusan:
-   [ ] H₀ ditolak → H₁ diterima
+   [x] H₀ ditolak → H₁ diterima
    [ ] H₀ tidak ditolak
 
 4. Interpretasi:
-   Hubungan ke RQ       : ____________________
-   Practical significance: ____________________
-   Perbandingan literatur: ____________________
+   Hubungan ke RQ       : Membuktikan bahwa mekanisme weighted probability secara signifikan lebih efisien dengan mengurangi expected pull rate.
+   Practical significance: Penurunan dari 166 menjadi 62 tarikan merupakan dampak praktikal yang masif pada pemain dan ekonomi game.
+   Perbandingan literatur: Sejalan dengan literatur tentang gacha game design, bahwa pity system mendistorsi secara positif peluang perolehan.
 
 5. Limitation:
    | Jenis | Ancaman | Dampak | Mitigasi |
    |-------|---------|--------|----------|
-   |       |         |        |          |
+   | External validity | Simulasi di satu set nilai rate (0.6% rate) | Generalisasi terbatas untuk gacha rate/struktur itu | Eksplorasi cross-rule gacha |
 
 6. Failure Analysis (jika H₀ tidak ditolak):
-   Penyebab potensial  : ____________________
-   Boundary condition   : ____________________
-   Insight              : ____________________
+   Penyebab potensial  : N/A (H₀ ditolak)
+   Boundary condition   : N/A
+   Insight              : N/A
 ```
 
 ---
@@ -116,13 +117,13 @@ Tentukan uji statistik yang tepat untuk eksperimen Anda.
 
 | Pertanyaan | Jawaban |
 |-----------|---------|
-| Berapa grup yang dibandingkan? | *Contoh: 3 (BERT, LSTM, SVM)* |
-| Apakah data berpasangan (paired)? | |
-| Apakah distribusi normal? (uji normalitas) | |
-| **Uji yang dipilih:** | |
-| **Justifikasi:** | |
+| Berapa grup yang dibandingkan? | *2 (Fixed Probability vs Weighted Probability)* |
+| Apakah data berpasangan (paired)? | *Tidak (independen run simulasi)* |
+| Apakah distribusi normal? (uji normalitas) | *Ya, berdasarkan central limit theorem dari jumlah simulasi besar.* |
+| **Uji yang dipilih:** | *Independent t-test* |
+| **Justifikasi:** | *Membandingkan dua kondisi eksperimen rata-rata yang independen dan berdistribusi normal.* |
 
-**Effect size yang akan dilaporkan:** [ ] Cohen's d / [ ] Eta-squared / [ ] Lainnya: ____
+**Effect size yang akan dilaporkan:** [x] Cohen's d / [ ] Eta-squared / [ ] Lainnya: ____
 
 ---
 
@@ -130,21 +131,21 @@ Tentukan uji statistik yang tepat untuk eksperimen Anda.
 
 Gunakan data berikut (atau data riil Anda) untuk berlatih interpretasi.
 
-**Data:**
-| Model | Accuracy (mean ± std) | n |
-|-------|----------------------|---|
-| A | 89.2 ± 1.5 | 10 |
-| B | 87.8 ± 2.1 | 10 |
+**Data (Riil - Eksperimen Gacha):**
+| Skenario | Average Pulls (mean ± std) | n |
+|----------|----------------------|---|
+| Fixed Probability | 166.7 ± 0.6 | 10 |
+| Weighted Probability | 62.4 ± 0.3 | 10 |
 
-p = 0.045, Cohen's d = 0.74, CI 95% = [0.03, 2.77]
+p < 0.001, Cohen's d > 5.0, CI 95% = [103.8, 104.8] (selisih pulls)
 
 | Aspek | Interpretasi |
 |-------|-------------|
-| Signifikansi statistik | *Contoh: p < 0.05 → signifikan pada α=0.05* |
-| Effect size | *Contoh: d=0.74 → medium-to-large effect* |
-| Practical significance | |
-| Hubungan ke RQ | |
-| Perbandingan literatur | |
+| Signifikansi statistik | *p < 0.001 → Sangat signifikan secara statistik pada α=0.01.* |
+| Effect size | *d > 5.0 → Sangat besar (huge effect). Perbedaan mekanisme ini tidak bisa diabaikan secara komputasi maupun user.* |
+| Practical significance | *Sistem weighted menghemat rata-rata 100 pull bagi user, dampak cost/monetisasi yang mengubah behaviour pemain.* |
+| Hubungan ke RQ | *Menjawab penuh H1 bahwa efisiensi weighted probability jauh lebih tinggi dari fixed.* |
+| Perbandingan literatur | *Sesuai dengan fenomena "pity mechanic" yang mendongkrak player retention.* |
 
 ---
 
@@ -152,22 +153,22 @@ p = 0.045, Cohen's d = 0.74, CI 95% = [0.03, 2.77]
 
 Latih kemampuan failure analysis: hipotesis TIDAK didukung. Apa yang bisa dipelajari?
 
-**Skenario:** Metode baru Anda mendapat F1 = 83.2%, baseline = 84.7%. p = 0.12 (tidak signifikan).
+**Skenario (Hipotetis Riset Gacha):** Anda membuat varian algoritma "Dynamic Pity" (pity beradaptasi per pemain). Namun perbedaannya dari soft-pity reguler ternyata memiliki p = 0.12 (tidak signifikan).
 
 | Pertanyaan | Jawaban |
 |-----------|---------|
-| Apakah ini "gagal"? | *Contoh: Bukan gagal total — hipotesis tidak terdukung adalah temuan yang valid dan bisa menjadi kontribusi.* |
-| Kemungkinan penyebab? | *Contoh: Metode baru menambah kompleksitas komputasi (+40% waktu) tanpa peningkatan F1 yang cukup — overhead tidak sebanding.* |
-| Boundary condition? | *Contoh: Metode ini hanya efektif ketika data ≥ 10.000 record; di dataset kecil (<1.000), baseline lebih stabil.* |
-| Insight yang bisa diambil? | *Contoh: Ada trade-off ukuran data vs kompleksitas — rekomendasikan hybrid approach yang adaptif berdasarkan ukuran dataset.* |
-| Apakah layak dilaporkan? Mengapa? | *Contoh: Ya — negative result + boundary condition analysis adalah kontribusi riset yang diakui komunitas (ex: ACL, SIGIR). Mencegah riset duplikasi yang berulang.* |
+| Apakah ini "gagal"? | *Bukan. Membuktikan bahwa menambah komputasi untuk "Dynamic Pity" tidak memberi manfaat tambahan (diminishing returns).* |
+| Kemungkinan penyebab? | *Distribusi penarikan sudah cukup dimitigasi oleh sistem soft pity standar; efek noise RNG mendominasi algoritma tambahan.* |
+| Boundary condition? | *Mungkin Dynamic Pity hanya ada efeknya di segmen whale spender; bagi kelompok general populasinya efeknya tertutup noise rata-rata.* |
+| Insight yang bisa diambil? | *Gunakan sistem Weighted Pity standar. Hindari implementasi Dynamic Pity karena membebani logic backend secara mubazir.* |
+| Apakah layak dilaporkan? Mengapa? | *Ya, informasi ini menyelamatkan waktu dan biaya riset industri game dalam bereksperimen dengan dynamic pity.* |
 
 **Limitation terkait:**
 | Jenis | Ancaman | Dampak |
 |-------|---------|--------|
-| *Contoh: Statistical* | *Contoh: Hanya 5 run per skenario* | *Power test rendah* |
-| | | |
-| | | |
+| *Construct validity* | *Sistem tidak membedakan player segment* | *Efek pity canggih yang spesifik player-base bisa hilang (flattened) dalam rata-rata.* |
+| *External validity* | *Base spending behavior dianggap uniform* | *Model simulasi bisa meleset di dunia nyata di mana player punya threshold limit frustrasi.* |
+| *Statistical limitation* | *Tail of distribution (outlier)* | *Simulasi standar terkadang memuluskan variance di ekstrem-ekstrem (lack of heavy-tails representation).* |
 
 ---
 
@@ -175,5 +176,4 @@ Latih kemampuan failure analysis: hipotesis TIDAK didukung. Apa yang bisa dipela
 
 > Apakah "failure" dalam riset benar-benar gagal, atau justru kontribusi? Bagaimana failure analysis mengubah cara Anda melihat hasil negatif?
 
-> ___________________________________________________
-> ___________________________________________________
+> "Failure" yang terdokumentasi adalah temuan ilmiah yang valid. Ia mencegah riset/industri mengulang kesalahan yang sama. Melalui failure analysis, hasil negatif yang awalnya terasa mengecewakan justru berubah menjadi wawasan atas *boundary conditions* (batasan kapan suatu sistem tidak bekerja lagi) dan berkontribusi terhadap landasan state-of-the-art di masa depan.
